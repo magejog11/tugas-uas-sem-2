@@ -53,7 +53,7 @@ $result = $conn->query($query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIPSEN forum mahasiswa UIM</title>
+    <title>TIPSEN forum mahasiswa UIM 2</title>
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <!-- Bootstrap 5 CSS CDN -->

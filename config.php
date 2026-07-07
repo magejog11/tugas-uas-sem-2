@@ -15,6 +15,7 @@ $categories = [
     'Pendidikan',
     'Kegiatan',
     'Pengumuman'
+    'Pengumuman 2'
 ];
 
 $conn = new mysqli($host, $user, $pass, $db);
