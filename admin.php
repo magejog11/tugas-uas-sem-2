@@ -8,6 +8,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $is_admin = isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'master_admin'], true);
+$is_master_admin = isset($_SESSION['role']) && $_SESSION['role'] === 'master_admin';
+$message = '';
 if (!$is_admin) {
     die('Akses ditolak. Hanya admin yang bisa membuka halaman ini.');
 }
@@ -16,6 +18,58 @@ if (isset($_POST['promote_user'])) {
     $user_id = intval($_POST['user_id']);
     $role = $_POST['role'] === 'admin' ? 'admin' : 'user';
     $conn->query("UPDATE users SET role = '$role' WHERE id = $user_id");
+    header('Location: admin.php');
+    exit();
+}
+
+if ($is_master_admin && isset($_POST['change_master_password'])) {
+    $current_password = trim($_POST['current_password']);
+    $new_password = trim($_POST['new_password']);
+    $confirm_password = trim($_POST['confirm_password']);
+
+    if ($current_password === '' || $new_password === '' || $confirm_password === '') {
+        $message = 'Semua kolom password harus diisi.';
+    } elseif ($new_password !== $confirm_password) {
+        $message = 'Password baru dan konfirmasi tidak sama.';
+    } else {
+        $user_id = intval($_SESSION['user_id']);
+        $stmt = $conn->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($user = $result->fetch_assoc()) {
+            if (password_verify($current_password, $user['password'])) {
+                $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+                $update = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $update->bind_param("si", $hashed_password, $user_id);
+                $update->execute();
+                $update->close();
+                $message = 'Password master admin berhasil diubah.';
+            } else {
+                $message = 'Password lama tidak cocok.';
+            }
+        }
+        $stmt->close();
+    }
+
+    header('Location: admin.php?message=' . urlencode($message));
+    exit();
+}
+
+if ($is_master_admin && isset($_GET['message'])) {
+    $message = htmlspecialchars($_GET['message']);
+}
+
+if ($is_master_admin && isset($_POST['change_user_password'])) {
+    $user_id = intval($_POST['user_id']);
+    $new_password = trim($_POST['new_password']);
+    if ($new_password !== '') {
+        $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+        $stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->bind_param("si", $hashed_password, $user_id);
+        $stmt->execute();
+        $stmt->close();
+    }
     header('Location: admin.php');
     exit();
 }
@@ -72,6 +126,43 @@ $topics_result = $conn->query("SELECT topics.id, topics.title, users.username FR
         </div>
     </div>
 
+    <?php if ($is_master_admin): ?>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="mb-3">Ganti Password Master Admin</h5>
+            <?php if ($message): ?>
+                <div class="alert alert-info">
+                    <?php echo $message; ?>
+                </div>
+            <?php endif; ?>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Password Lama</label>
+                    <div class="input-group">
+                        <input type="password" name="current_password" id="currentPassword" class="form-control" placeholder="Masukkan password lama" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordInput('currentPassword', this)">Tampilkan</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password Baru</label>
+                    <div class="input-group">
+                        <input type="password" name="new_password" id="newPasswordMaster" class="form-control" placeholder="Masukkan password baru" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordInput('newPasswordMaster', this)">Tampilkan</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Konfirmasi Password Baru</label>
+                    <div class="input-group">
+                        <input type="password" name="confirm_password" id="confirmPasswordMaster" class="form-control" placeholder="Ulangi password baru" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordInput('confirmPasswordMaster', this)">Tampilkan</button>
+                    </div>
+                </div>
+                <button type="submit" name="change_master_password" class="btn btn-success">Simpan Password</button>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <h5 class="mb-3">Daftar Pengguna</h5>
@@ -93,14 +184,31 @@ $topics_result = $conn->query("SELECT topics.id, topics.title, users.username FR
                                 <td><?php echo date('d M Y', strtotime($user['created_at'])); ?></td>
                                 <td>
                                     <?php if ($user['role'] !== 'master_admin'): ?>
-                                        <form method="POST" class="d-flex gap-2">
-                                            <input type="hidden" name="user_id" value="<?php echo (int)$user['id']; ?>">
-                                            <select name="role" class="form-select form-select-sm">
-                                                <option value="user" <?php echo $user['role'] === 'user' ? 'selected' : ''; ?>>User</option>
-                                                <option value="admin" <?php echo $user['role'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
-                                            </select>
-                                            <button type="submit" name="promote_user" class="btn btn-sm btn-outline-primary">Simpan</button>
-                                        </form>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <form method="POST" class="d-flex gap-2">
+                                                <input type="hidden" name="user_id" value="<?php echo (int)$user['id']; ?>">
+                                                <select name="role" class="form-select form-select-sm">
+                                                    <option value="user" <?php echo $user['role'] === 'user' ? 'selected' : ''; ?>>User</option>
+                                                    <option value="admin" <?php echo $user['role'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
+                                                </select>
+                                                <button type="submit" name="promote_user" class="btn btn-sm btn-outline-primary">Simpan</button>
+                                            </form>
+                                            <?php if ($is_master_admin): ?>
+                                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#resetPassword<?php echo (int)$user['id']; ?>" aria-expanded="false" aria-controls="resetPassword<?php echo (int)$user['id']; ?>">Reset Password</button>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if ($is_master_admin): ?>
+                                            <div class="collapse mt-2" id="resetPassword<?php echo (int)$user['id']; ?>">
+                                                <form method="POST" class="d-flex gap-2 align-items-center">
+                                                    <input type="hidden" name="user_id" value="<?php echo (int)$user['id']; ?>">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="password" name="new_password" id="newPassword<?php echo (int)$user['id']; ?>" class="form-control" placeholder="Password baru" required>
+                                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordInput('newPassword<?php echo (int)$user['id']; ?>', this)">Tampilkan</button>
+                                                    </div>
+                                                    <button type="submit" name="change_user_password" class="btn btn-sm btn-success">Ubah</button>
+                                                </form>
+                                            </div>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="text-muted">Master</span>
                                     <?php endif; ?>
@@ -129,5 +237,19 @@ $topics_result = $conn->query("SELECT topics.id, topics.title, users.username FR
         </div>
     </div>
 </div>
+<script>
+    function togglePasswordInput(inputId, button) {
+        var input = document.getElementById(inputId);
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.textContent = 'Sembunyikan';
+        } else {
+            input.type = 'password';
+            button.textContent = 'Tampilkan';
+        }
+    }
+</script>
+<script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

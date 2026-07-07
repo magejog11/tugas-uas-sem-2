@@ -63,7 +63,10 @@ if (isset($_POST['login'])) {
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Password</label>
-                                <input type="password" name="password" class="form-control" placeholder="Masukkan password" required>
+                                <div class="input-group">
+                                    <input type="password" id="password" name="password" class="form-control" placeholder="Masukkan password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">Tampilkan</button>
+                                </div>
                             </div>
                             <button type="submit" name="login" class="btn btn-primary w-100 py-2">Masuk</button>
                         </form>
@@ -79,6 +82,17 @@ if (isset($_POST['login'])) {
             </div>
         </div>
     </div>
-
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.textContent = 'Sembunyikan';
+            } else {
+                passwordInput.type = 'password';
+                this.textContent = 'Tampilkan';
+            }
+        });
+    </script>
 </body>
 </html>

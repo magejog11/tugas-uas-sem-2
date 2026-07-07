@@ -66,7 +66,10 @@ if (isset($_POST['register'])) {
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Password</label>
-                                <input type="password" name="password" class="form-control" placeholder="Buat password" required>
+                                <div class="input-group">
+                                    <input type="password" id="password" name="password" class="form-control" placeholder="Buat password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">Tampilkan</button>
+                                </div>
                             </div>
                             <!-- Perhatikan name="register" di bawah ini -->
                             <button type="submit" name="register" class="btn btn-success w-100 py-2">Daftar Sekarang</button>
@@ -80,6 +83,17 @@ if (isset($_POST['register'])) {
             </div>
         </div>
     </div>
-
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.textContent = 'Sembunyikan';
+            } else {
+                passwordInput.type = 'password';
+                this.textContent = 'Tampilkan';
+            }
+        });
+    </script>
 </body>
 </html>
