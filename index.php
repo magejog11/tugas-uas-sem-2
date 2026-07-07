@@ -6,6 +6,7 @@ if (!isset($categories)) {
     $categories = [];
 }
 
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 $selected_category = '';
 $category_filter = '';
 if (isset($_GET['category']) && in_array($_GET['category'], $categories, true)) {
@@ -13,7 +14,25 @@ if (isset($_GET['category']) && in_array($_GET['category'], $categories, true)) 
     $category_filter = "WHERE topics.category = '" . $conn->real_escape_string($selected_category) . "'";
 }
 
-$query = "SELECT topics.*, users.username FROM topics JOIN users ON topics.user_id = users.id $category_filter ORDER BY topics.created_at DESC";
+if (isset($_GET['like_topic']) && $current_user_id > 0) {
+    $topic_id_to_like = intval($_GET['like_topic']);
+    $existing_like = $conn->query("SELECT id FROM topic_likes WHERE topic_id = $topic_id_to_like AND user_id = $current_user_id");
+    if ($existing_like && $existing_like->num_rows > 0) {
+        $conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id_to_like AND user_id = $current_user_id");
+    } else {
+        $conn->query("INSERT INTO topic_likes (topic_id, user_id) VALUES ($topic_id_to_like, $current_user_id)");
+    }
+
+    $redirect_params = [];
+    if ($selected_category !== '') {
+        $redirect_params[] = 'category=' . urlencode($selected_category);
+    }
+    $redirect_url = 'index.php' . (!empty($redirect_params) ? '?' . implode('&', $redirect_params) : '');
+    header('Location: ' . $redirect_url);
+    exit();
+}
+
+$query = "SELECT topics.*, users.username, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id) AS like_count, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.user_id = $current_user_id) AS liked_by_me FROM topics JOIN users ON topics.user_id = users.id $category_filter ORDER BY topics.created_at DESC";
 $result = $conn->query($query);
 ?>
 
@@ -78,7 +97,7 @@ $result = $conn->query($query);
                 <div class="list-group shadow-sm">
                     <?php if ($result->num_rows > 0): ?>
                         <?php while($row = $result->fetch_assoc()): ?>
-                            <a href="view_topic.php?id=<?php echo $row['id']; ?>" class="list-group-item list-group-item-action p-3">
+                            <div class="list-group-item p-3">
                                 <div class="d-flex gap-3">
                                     <?php if (!empty($row['image_path'])): ?>
                                         <img src="<?php echo htmlspecialchars($row['image_path']); ?>" alt="Thumbnail" class="rounded" style="width:100px; height:100px; object-fit:cover;">
@@ -86,7 +105,9 @@ $result = $conn->query($query);
                                     <div class="flex-grow-1">
                                         <div class="d-flex w-100 justify-content-between align-items-start gap-2">
                                             <div>
-                                                <h5 class="mb-1 text-primary"><?php echo htmlspecialchars($row['title']); ?></h5>
+                                                <a href="view_topic.php?id=<?php echo $row['id']; ?>" class="text-decoration-none">
+                                                    <h5 class="mb-1 text-primary"><?php echo htmlspecialchars($row['title']); ?></h5>
+                                                </a>
                                                 <span class="badge bg-info text-dark"><?php echo htmlspecialchars($row['category']); ?></span>
                                             </div>
                                             <div class="text-end">
@@ -97,10 +118,25 @@ $result = $conn->query($query);
                                             </div>
                                         </div>
                                         <p class="mb-1 text-muted text-truncate"><?php echo htmlspecialchars(substr($row['content'], 0, 100)); ?>...</p>
-                                        <small class="text-secondary">Oleh: <b><?php echo htmlspecialchars($row['username']); ?></b></small>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-secondary">Oleh: <b><?php echo htmlspecialchars($row['username']); ?></b></small>
+                                            <?php if ($current_user_id > 0): ?>
+                                                <form method="GET" action="index.php" class="d-inline">
+                                                    <input type="hidden" name="like_topic" value="<?php echo $row['id']; ?>">
+                                                    <?php if ($selected_category !== ''): ?>
+                                                        <input type="hidden" name="category" value="<?php echo htmlspecialchars($selected_category); ?>">
+                                                    <?php endif; ?>
+                                                    <button type="submit" class="btn btn-sm <?php echo (int)$row['liked_by_me'] ? 'btn-danger' : 'btn-outline-danger'; ?>">
+                                                        ♥ <?php echo (int)$row['like_count']; ?>
+                                                    </button>
+                                                </form>
+                                            <?php else: ?>
+                                                <a href="login.php" class="btn btn-sm btn-outline-danger">♥ <?php echo (int)$row['like_count']; ?></a>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
-                            </a>
+                            </div>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <div class="list-group-item text-center py-4 text-muted">Belum ada diskusi terbuka.</div>
