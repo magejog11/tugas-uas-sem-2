@@ -39,7 +39,8 @@ if ($replies) {
     }
 }
 
-// Hapus balasan dan topik
+// Hapus balasan, reaksi, dan topik
+$conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id");
 $conn->query("DELETE FROM replies WHERE topic_id = $topic_id");
 $conn->query("DELETE FROM topics WHERE id = $topic_id");
 

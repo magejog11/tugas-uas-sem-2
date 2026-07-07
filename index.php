@@ -14,13 +14,24 @@ if (isset($_GET['category']) && in_array($_GET['category'], $categories, true)) 
     $category_filter = "WHERE topics.category = '" . $conn->real_escape_string($selected_category) . "'";
 }
 
-if (isset($_GET['like_topic']) && $current_user_id > 0) {
-    $topic_id_to_like = intval($_GET['like_topic']);
-    $existing_like = $conn->query("SELECT id FROM topic_likes WHERE topic_id = $topic_id_to_like AND user_id = $current_user_id");
-    if ($existing_like && $existing_like->num_rows > 0) {
-        $conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id_to_like AND user_id = $current_user_id");
+$topic_id_to_react = isset($_GET['topic_id']) ? intval($_GET['topic_id']) : 0;
+$reaction_to_apply = '';
+if (isset($_GET['reaction_topic']) && in_array($_GET['reaction_topic'], ['like', 'dislike'], true)) {
+    $reaction_to_apply = $_GET['reaction_topic'];
+}
+
+if ($topic_id_to_react > 0 && $reaction_to_apply !== '' && $current_user_id > 0) {
+    $reaction_value = $conn->real_escape_string($reaction_to_apply);
+    $existing_reaction = $conn->query("SELECT id, reaction FROM topic_likes WHERE topic_id = $topic_id_to_react AND user_id = $current_user_id");
+    if ($existing_reaction && $existing_reaction->num_rows > 0) {
+        $existing_row = $existing_reaction->fetch_assoc();
+        if ($existing_row['reaction'] === $reaction_value) {
+            $conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id_to_react AND user_id = $current_user_id");
+        } else {
+            $conn->query("UPDATE topic_likes SET reaction = '$reaction_value' WHERE topic_id = $topic_id_to_react AND user_id = $current_user_id");
+        }
     } else {
-        $conn->query("INSERT INTO topic_likes (topic_id, user_id) VALUES ($topic_id_to_like, $current_user_id)");
+        $conn->query("INSERT INTO topic_likes (topic_id, user_id, reaction) VALUES ($topic_id_to_react, $current_user_id, '$reaction_value')");
     }
 
     $redirect_params = [];
@@ -32,7 +43,7 @@ if (isset($_GET['like_topic']) && $current_user_id > 0) {
     exit();
 }
 
-$query = "SELECT topics.*, users.username, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id) AS like_count, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.user_id = $current_user_id) AS liked_by_me FROM topics JOIN users ON topics.user_id = users.id $category_filter ORDER BY topics.created_at DESC";
+$query = "SELECT topics.*, users.username, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.reaction = 'like') AS like_count, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.reaction = 'dislike') AS dislike_count, (SELECT tl.reaction FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.user_id = $current_user_id) AS user_reaction FROM topics JOIN users ON topics.user_id = users.id $category_filter ORDER BY topics.created_at DESC";
 $result = $conn->query($query);
 ?>
 
@@ -120,19 +131,33 @@ $result = $conn->query($query);
                                         <p class="mb-1 text-muted text-truncate"><?php echo htmlspecialchars(substr($row['content'], 0, 100)); ?>...</p>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <small class="text-secondary">Oleh: <b><?php echo htmlspecialchars($row['username']); ?></b></small>
-                                            <?php if ($current_user_id > 0): ?>
-                                                <form method="GET" action="index.php" class="d-inline">
-                                                    <input type="hidden" name="like_topic" value="<?php echo $row['id']; ?>">
-                                                    <?php if ($selected_category !== ''): ?>
-                                                        <input type="hidden" name="category" value="<?php echo htmlspecialchars($selected_category); ?>">
-                                                    <?php endif; ?>
-                                                    <button type="submit" class="btn btn-sm <?php echo (int)$row['liked_by_me'] ? 'btn-danger' : 'btn-outline-danger'; ?>">
-                                                        ♥ <?php echo (int)$row['like_count']; ?>
-                                                    </button>
-                                                </form>
-                                            <?php else: ?>
-                                                <a href="login.php" class="btn btn-sm btn-outline-danger">♥ <?php echo (int)$row['like_count']; ?></a>
-                                            <?php endif; ?>
+                                            <div class="d-flex gap-2">
+                                                <?php if ($current_user_id > 0): ?>
+                                                    <form method="GET" action="index.php" class="d-inline">
+                                                        <input type="hidden" name="topic_id" value="<?php echo $row['id']; ?>">
+                                                        <input type="hidden" name="reaction_topic" value="like">
+                                                        <?php if ($selected_category !== ''): ?>
+                                                            <input type="hidden" name="category" value="<?php echo htmlspecialchars($selected_category); ?>">
+                                                        <?php endif; ?>
+                                                        <button type="submit" class="btn btn-sm <?php echo $row['user_reaction'] === 'like' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                                                            👍 <?php echo (int)$row['like_count']; ?>
+                                                        </button>
+                                                    </form>
+                                                    <form method="GET" action="index.php" class="d-inline">
+                                                        <input type="hidden" name="topic_id" value="<?php echo $row['id']; ?>">
+                                                        <input type="hidden" name="reaction_topic" value="dislike">
+                                                        <?php if ($selected_category !== ''): ?>
+                                                            <input type="hidden" name="category" value="<?php echo htmlspecialchars($selected_category); ?>">
+                                                        <?php endif; ?>
+                                                        <button type="submit" class="btn btn-sm <?php echo $row['user_reaction'] === 'dislike' ? 'btn-danger' : 'btn-outline-danger'; ?>">
+                                                            👎 <?php echo (int)$row['dislike_count']; ?>
+                                                        </button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <a href="login.php" class="btn btn-sm btn-outline-primary">👍 <?php echo (int)$row['like_count']; ?></a>
+                                                    <a href="login.php" class="btn btn-sm btn-outline-danger">👎 <?php echo (int)$row['dislike_count']; ?></a>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
