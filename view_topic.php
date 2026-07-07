@@ -2,14 +2,31 @@
 include 'config.php';
 session_start();
 
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 $topic_id = intval($_GET['id']);
 // Inisialisasi variabel error agar tidak muncul warning jika tidak ada error
 $error_message = '';
 
+if (isset($_GET['like_topic']) && $current_user_id > 0 && $topic_id > 0) {
+    $existing_like = $conn->query("SELECT id FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
+    if ($existing_like && $existing_like->num_rows > 0) {
+        $conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
+    } else {
+        $conn->query("INSERT INTO topic_likes (topic_id, user_id) VALUES ($topic_id, $current_user_id)");
+    }
+    header("Location: view_topic.php?id=" . $topic_id);
+    exit();
+}
+
 // 1. Ambil Data Topik
-$topic_query = "SELECT topics.*, users.username FROM topics JOIN users ON topics.user_id = users.id WHERE topics.id = $topic_id";
+$topic_query = "SELECT topics.*, users.username, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id) AS like_count FROM topics JOIN users ON topics.user_id = users.id WHERE topics.id = $topic_id";
 $topic_result = $conn->query($topic_query);
 $topic = $topic_result->fetch_assoc();
+$liked_by_me = false;
+if ($current_user_id > 0 && $topic) {
+    $liked_check = $conn->query("SELECT id FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
+    $liked_by_me = ($liked_check && $liked_check->num_rows > 0);
+}
 
 if (!$topic) {
     die("Topik tidak ditemukan.");
@@ -109,6 +126,19 @@ $replies_result = $conn->query($replies_query);
                         <p class="card-text fs-5 text-secondary" style="line-height: 1.7;">
                             <?php echo nl2br(htmlspecialchars($topic['content'])); ?>
                         </p>
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <?php if ($current_user_id > 0): ?>
+                                <form method="GET" action="view_topic.php" class="d-inline">
+                                    <input type="hidden" name="id" value="<?php echo $topic['id']; ?>">
+                                    <input type="hidden" name="like_topic" value="1">
+                                    <button type="submit" class="btn btn-sm <?php echo $liked_by_me ? 'btn-danger' : 'btn-outline-danger'; ?>">
+                                        <?php echo $liked_by_me ? '♥ Disukai' : '♡ Suka'; ?> (<?php echo (int)$topic['like_count']; ?>)
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <a href="login.php" class="btn btn-sm btn-outline-danger">♡ Suka (<?php echo (int)$topic['like_count']; ?>)</a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
