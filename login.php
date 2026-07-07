@@ -11,19 +11,24 @@ if (isset($_POST['login'])) {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT id, password, role FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
-        // Verifikasi kesocokan password terenkripsi
         if (password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $username;
-            
-            header("Location: index.php");
+            $_SESSION['role'] = $user['role'] ?? 'user';
+            $_SESSION['is_admin'] = in_array($_SESSION['role'], ['admin', 'master_admin'], true);
+
+            if ($_SESSION['is_admin']) {
+                header("Location: admin.php");
+            } else {
+                header("Location: index.php");
+            }
             exit();
         } else {
             echo "<script>alert('Password salah!');</script>";

@@ -3,6 +3,7 @@ include 'config.php';
 session_start();
 
 $current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
+$is_admin = isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'master_admin'], true);
 $topic_id = intval($_GET['id']);
 // Inisialisasi variabel error agar tidak muncul warning jika tidak ada error
 $error_message = '';
@@ -112,7 +113,7 @@ $replies_result = $conn->query($replies_query);
                 <div class="col-md-8 mx-auto">
                 <div class="d-flex justify-content-between mb-4">
                     <a href="index.php" class="btn btn-outline-secondary btn-sm">← Kembali ke Daftar Topik</a>
-                    <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $topic['user_id']): ?>
+                    <?php if (isset($_SESSION['user_id']) && ($_SESSION['user_id'] == $topic['user_id'] || $is_admin)): ?>
                         <a href="delete_topic.php?id=<?php echo $topic['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus topik ini? Semua balasan juga akan dihapus.')">Hapus Topik</a>
                     <?php endif; ?>
                 </div>
@@ -182,7 +183,7 @@ $replies_result = $conn->query($replies_query);
                                             <div><small class="text-muted"><?php echo date('d M Y, H:i', strtotime($reply['created_at'])); ?></small></div>
                                         </div>
                                         <div>
-                                            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $reply['user_id']): ?>
+                                            <?php if (isset($_SESSION['user_id']) && ($_SESSION['user_id'] == $reply['user_id'] || $is_admin)): ?>
                                                 <a href="delete_reply.php?id=<?php echo $reply['id']; ?>&topic_id=<?php echo $topic_id; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus balasan ini?')">Hapus</a>
                                             <?php endif; ?>
                                         </div>
