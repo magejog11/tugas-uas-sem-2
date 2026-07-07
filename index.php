@@ -22,7 +22,7 @@ $result = $conn->query($query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORKOM UIM</title>
+    <title>TIPSEN forum mahasiswa UIM</title>
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <!-- Bootstrap 5 CSS CDN -->
@@ -34,7 +34,7 @@ $result = $conn->query($query);
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="index.php">
-                <img src="logo1.png" alt="Logo" height="70" class="me-2">FORKOM UIMYogyakarta
+                <img src="logo1.png" alt="Logo" height="70" class="me-2">TIPSEN forum mahasiswa UIM
             </a>
             <div class="d-flex align-items-center">
                 <?php if (isset($_SESSION['user_id'])): ?>
