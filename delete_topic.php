@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $topic_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$is_admin = isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'master_admin'], true);
 if ($topic_id <= 0) {
     header("Location: index.php");
     exit();
@@ -20,7 +21,7 @@ if (!$res || $res->num_rows === 0) {
 }
 
 $topic = $res->fetch_assoc();
-if ($topic['user_id'] != $_SESSION['user_id']) {
+if ($topic['user_id'] != $_SESSION['user_id'] && !$is_admin) {
     die('Akses ditolak. Anda tidak berhak menghapus topik ini.');
 }
 
@@ -39,7 +40,8 @@ if ($replies) {
     }
 }
 
-// Hapus balasan dan topik
+// Hapus balasan, reaksi, dan topik
+$conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id");
 $conn->query("DELETE FROM replies WHERE topic_id = $topic_id");
 $conn->query("DELETE FROM topics WHERE id = $topic_id");
 

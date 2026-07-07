@@ -3,29 +3,41 @@ include 'config.php';
 session_start();
 
 $current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
+$is_admin = isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'master_admin'], true);
 $topic_id = intval($_GET['id']);
 // Inisialisasi variabel error agar tidak muncul warning jika tidak ada error
 $error_message = '';
 
-if (isset($_GET['like_topic']) && $current_user_id > 0 && $topic_id > 0) {
-    $existing_like = $conn->query("SELECT id FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
-    if ($existing_like && $existing_like->num_rows > 0) {
-        $conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
+$topic_id_to_react = isset($_GET['topic_id']) ? intval($_GET['topic_id']) : 0;
+$reaction_to_apply = '';
+if (isset($_GET['reaction_topic']) && in_array($_GET['reaction_topic'], ['like', 'dislike'], true)) {
+    $reaction_to_apply = $_GET['reaction_topic'];
+}
+
+if ($topic_id_to_react > 0 && $reaction_to_apply !== '' && $current_user_id > 0 && $topic_id > 0) {
+    $reaction_value = $conn->real_escape_string($reaction_to_apply);
+    $existing_reaction = $conn->query("SELECT id, reaction FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
+    if ($existing_reaction && $existing_reaction->num_rows > 0) {
+        $existing_row = $existing_reaction->fetch_assoc();
+        if ($existing_row['reaction'] === $reaction_value) {
+            $conn->query("DELETE FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
+        } else {
+            $conn->query("UPDATE topic_likes SET reaction = '$reaction_value' WHERE topic_id = $topic_id AND user_id = $current_user_id");
+        }
     } else {
-        $conn->query("INSERT INTO topic_likes (topic_id, user_id) VALUES ($topic_id, $current_user_id)");
+        $conn->query("INSERT INTO topic_likes (topic_id, user_id, reaction) VALUES ($topic_id, $current_user_id, '$reaction_value')");
     }
     header("Location: view_topic.php?id=" . $topic_id);
     exit();
 }
 
 // 1. Ambil Data Topik
-$topic_query = "SELECT topics.*, users.username, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id) AS like_count FROM topics JOIN users ON topics.user_id = users.id WHERE topics.id = $topic_id";
+$topic_query = "SELECT topics.*, users.username, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.reaction = 'like') AS like_count, (SELECT COUNT(*) FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.reaction = 'dislike') AS dislike_count, (SELECT tl.reaction FROM topic_likes tl WHERE tl.topic_id = topics.id AND tl.user_id = $current_user_id) AS user_reaction FROM topics JOIN users ON topics.user_id = users.id WHERE topics.id = $topic_id";
 $topic_result = $conn->query($topic_query);
 $topic = $topic_result->fetch_assoc();
-$liked_by_me = false;
+$user_reaction = '';
 if ($current_user_id > 0 && $topic) {
-    $liked_check = $conn->query("SELECT id FROM topic_likes WHERE topic_id = $topic_id AND user_id = $current_user_id");
-    $liked_by_me = ($liked_check && $liked_check->num_rows > 0);
+    $user_reaction = $topic['user_reaction'] ?? '';
 }
 
 if (!$topic) {
@@ -101,7 +113,7 @@ $replies_result = $conn->query($replies_query);
                 <div class="col-md-8 mx-auto">
                 <div class="d-flex justify-content-between mb-4">
                     <a href="index.php" class="btn btn-outline-secondary btn-sm">← Kembali ke Daftar Topik</a>
-                    <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $topic['user_id']): ?>
+                    <?php if (isset($_SESSION['user_id']) && ($_SESSION['user_id'] == $topic['user_id'] || $is_admin)): ?>
                         <a href="delete_topic.php?id=<?php echo $topic['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus topik ini? Semua balasan juga akan dihapus.')">Hapus Topik</a>
                     <?php endif; ?>
                 </div>
@@ -128,15 +140,29 @@ $replies_result = $conn->query($replies_query);
                         </p>
                         <div class="d-flex justify-content-between align-items-center mt-4">
                             <?php if ($current_user_id > 0): ?>
-                                <form method="GET" action="view_topic.php" class="d-inline">
-                                    <input type="hidden" name="id" value="<?php echo $topic['id']; ?>">
-                                    <input type="hidden" name="like_topic" value="1">
-                                    <button type="submit" class="btn btn-sm <?php echo $liked_by_me ? 'btn-danger' : 'btn-outline-danger'; ?>">
-                                        <?php echo $liked_by_me ? '♥ Disukai' : '♡ Suka'; ?> (<?php echo (int)$topic['like_count']; ?>)
-                                    </button>
-                                </form>
+                                <div class="d-flex gap-2">
+                                    <form method="GET" action="view_topic.php" class="d-inline">
+                                        <input type="hidden" name="id" value="<?php echo $topic['id']; ?>">
+                                        <input type="hidden" name="topic_id" value="<?php echo $topic['id']; ?>">
+                                        <input type="hidden" name="reaction_topic" value="like">
+                                        <button type="submit" class="btn btn-sm <?php echo $user_reaction === 'like' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                                            👍 <?php echo $user_reaction === 'like' ? 'Disukai' : 'Suka'; ?> (<?php echo (int)$topic['like_count']; ?>)
+                                        </button>
+                                    </form>
+                                    <form method="GET" action="view_topic.php" class="d-inline">
+                                        <input type="hidden" name="id" value="<?php echo $topic['id']; ?>">
+                                        <input type="hidden" name="topic_id" value="<?php echo $topic['id']; ?>">
+                                        <input type="hidden" name="reaction_topic" value="dislike">
+                                        <button type="submit" class="btn btn-sm <?php echo $user_reaction === 'dislike' ? 'btn-danger' : 'btn-outline-danger'; ?>">
+                                            👎 <?php echo $user_reaction === 'dislike' ? 'Didislike' : 'Dislike'; ?> (<?php echo (int)$topic['dislike_count']; ?>)
+                                        </button>
+                                    </form>
+                                </div>
                             <?php else: ?>
-                                <a href="login.php" class="btn btn-sm btn-outline-danger">♡ Suka (<?php echo (int)$topic['like_count']; ?>)</a>
+                                <div class="d-flex gap-2">
+                                    <a href="login.php" class="btn btn-sm btn-outline-primary">👍 Suka (<?php echo (int)$topic['like_count']; ?>)</a>
+                                    <a href="login.php" class="btn btn-sm btn-outline-danger">👎 Dislike (<?php echo (int)$topic['dislike_count']; ?>)</a>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -157,7 +183,7 @@ $replies_result = $conn->query($replies_query);
                                             <div><small class="text-muted"><?php echo date('d M Y, H:i', strtotime($reply['created_at'])); ?></small></div>
                                         </div>
                                         <div>
-                                            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $reply['user_id']): ?>
+                                            <?php if (isset($_SESSION['user_id']) && ($_SESSION['user_id'] == $reply['user_id'] || $is_admin)): ?>
                                                 <a href="delete_reply.php?id=<?php echo $reply['id']; ?>&topic_id=<?php echo $topic_id; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus balasan ini?')">Hapus</a>
                                             <?php endif; ?>
                                         </div>
