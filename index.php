@@ -7,6 +7,7 @@ if (!isset($categories)) {
 }
 
 $current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
+$is_admin = isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'master_admin'], true);
 $selected_category = '';
 $category_filter = '';
 if (isset($_GET['category']) && in_array($_GET['category'], $categories, true)) {
@@ -52,7 +53,7 @@ $result = $conn->query($query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIPSEN forum mahasiswa UIM</title>
+    <title>TIPSEN forum mahasiswa UIM 1</title>
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <!-- Bootstrap 5 CSS CDN -->
@@ -69,6 +70,9 @@ $result = $conn->query($query);
             <div class="d-flex align-items-center">
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <span class="text-white me-3">Halo, <strong><?php echo htmlspecialchars($_SESSION['username'] ?? 'Pengguna'); ?></strong></span>
+                    <?php if ($is_admin): ?>
+                        <a href="admin.php" class="btn btn-warning btn-sm me-2">Admin</a>
+                    <?php endif; ?>
                     <a href="logout.php" class="btn btn-outline-danger btn-sm">Keluar</a>
                 <?php else: ?>
                     <a href="login.php" class="btn btn-outline-light btn-sm me-2">Masuk</a>
@@ -123,7 +127,7 @@ $result = $conn->query($query);
                                             </div>
                                             <div class="text-end">
                                                 <small class="text-muted d-block"><?php echo date('d M Y', strtotime($row['created_at'])); ?></small>
-                                                <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $row['user_id']): ?>
+                                                <?php if (isset($_SESSION['user_id']) && ($_SESSION['user_id'] == $row['user_id'] || $is_admin)): ?>
                                                     <a href="delete_topic.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger mt-1" onclick="return confirm('Hapus topik ini? Semua balasan juga akan dihapus.')">Hapus</a>
                                                 <?php endif; ?>
                                             </div>
