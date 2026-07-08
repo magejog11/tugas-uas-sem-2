@@ -139,6 +139,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 24px;
             text-align: center;
         }
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper .form-control-modern {
+            padding-right: 48px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+        }
+        .password-toggle:hover {
+            color: #0A959C;
+        }
     </style>
 </head>
 <body>
@@ -167,7 +186,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-secondary">Kata Sandi</label>
-                        <input type="password" name="password" class="form-control-modern w-100" placeholder="••••••••" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" class="form-control-modern w-100" placeholder="••••••••" required>
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', 'password-toggle-icon')" aria-label="Tampilkan kata sandi">
+                                <i id="password-toggle-icon" class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-modern w-100 mb-3">
@@ -185,6 +209,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
+<script>
+function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+
+    if (!input || !icon) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    icon.classList.toggle('fa-eye', !isPassword);
+    icon.classList.toggle('fa-eye-slash', isPassword);
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

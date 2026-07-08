@@ -52,6 +52,28 @@ if (isset($_POST['register'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrasi Pengguna</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper .form-control {
+            padding-right: 45px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .password-toggle:hover {
+            color: #198754;
+        }
+    </style>
 </head>
 <body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
 
@@ -69,7 +91,12 @@ if (isset($_POST['register'])) {
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Password</label>
-                                <input type="password" name="password" class="form-control" placeholder="Buat password" required>
+                                <div class="password-wrapper">
+                                    <input type="password" id="password" name="password" class="form-control" placeholder="Buat password" required>
+                                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', 'password-toggle-icon')" aria-label="Tampilkan kata sandi">
+                                        <i id="password-toggle-icon" class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <!-- Perhatikan name="register" di bawah ini -->
                             <button type="submit" name="register" class="btn btn-success w-100 py-2">Daftar Sekarang</button>
@@ -84,5 +111,18 @@ if (isset($_POST['register'])) {
         </div>
     </div>
 
+    <script>
+    function togglePasswordVisibility(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+
+        if (!input || !icon) return;
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.classList.toggle('fa-eye', !isPassword);
+        icon.classList.toggle('fa-eye-slash', isPassword);
+    }
+    </script>
 </body>
 </html>
