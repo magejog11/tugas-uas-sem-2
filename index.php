@@ -560,6 +560,24 @@ $result = $conn->query($query);
                 margin-left: 0;
             }
         }
+        .logo-img{
+    width:45px;
+    height:45px;
+    object-fit:contain;
+    margin-right:10px;
+}
+
+.navbar-brand{
+    display:flex;
+    align-items:center;
+    text-decoration:none;
+}
+
+.brand-text{
+    font-size:28px;
+    font-weight:bold;
+    color:#0d4d91;
+}
     </style>
 </head>
 <body>
@@ -568,9 +586,9 @@ $result = $conn->query($query);
         <div class="container">
             <div class="header-left">
                 <a class="navbar-brand" href="index.php">
-                    <span class="logo-mark">F</span>
-                    <span class="brand-text">FORKOM UIMY</span>
-                </a>
+    <img src="assets/img/logo.png" alt="Logo FORKOM" class="logo-img">
+    <span class="brand-text">FORKOM UIMY</span>
+</a>
                 <div class="header-search">
                     <i class="fas fa-search"></i>
                     <input type="text" placeholder="Cari di FORKOM..." aria-label="Cari" />
