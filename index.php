@@ -44,7 +44,7 @@ $result = $conn->query($query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIBSEN BETA3</title>
+    <title>TIBSEN BETA</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -569,7 +569,7 @@ $result = $conn->query($query);
             <div class="header-left">
                 <a class="navbar-brand" href="index.php">
                     <span class="logo-mark">F</span>
-                    <span class="brand-text">FORKOM UIMY</span>
+                    <span class="brand-text">TIBSEN UIMY</span>
                 </a>
                 <div class="header-search">
                     <i class="fas fa-search"></i>
