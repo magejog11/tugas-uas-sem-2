@@ -44,7 +44,11 @@ $result = $conn->query($query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>TIBSEN BETA2</title>
+=======
+    <title>TIBSEN BETA3</title>
+>>>>>>> 126b34fb8d7a7a8e961da132b1a025cc23996aa5
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
