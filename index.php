@@ -105,15 +105,20 @@ $result = $conn->query($query);
             text-decoration: none;
         }
         .logo-mark {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #0A959C 0%, #087d83 100%);
+            width: auto;
+            height: 48px;
+            border-radius: 0;
+            background: transparent;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #ffffff;
-            font-size: 18px;
+            overflow: hidden;
+        }
+        .logo-image {
+            width: auto;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
         .brand-text {
             font-size: 1.05rem;
@@ -568,8 +573,10 @@ $result = $conn->query($query);
         <div class="container">
             <div class="header-left">
                 <a class="navbar-brand" href="index.php">
-                    <span class="logo-mark">F</span>
-                    <span class="brand-text">TIBSEN UIMY</span>
+                    <span class="logo-mark">
+                        <img src="assets/img/logo.png" alt="Logo TIPSEN" class="logo-image">
+                    </span>
+                    <span class="brand-text">TIPSEN</span>
                 </a>
                 <div class="header-search">
                     <i class="fas fa-search"></i>
