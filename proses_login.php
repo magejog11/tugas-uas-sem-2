@@ -137,7 +137,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </span>
                 </div>
                 
-                <p class='welcome-msg'>Selamat datang kembali di Forum Diskusi FORKOM UIMY.</p>
+                <p class='welcome-msg'>Selamat datang kembali di TIPSEN.</p>
 
                 <a href='index.php' class='btn btn-lanjut'>Masuk ke Beranda <i class='fas fa-arrow-right'></i></a>
                 <small class='text-muted d-block mt-3' style='font-size: 12px;'>Mengalihkan otomatis dalam beberapa detik...</small>
