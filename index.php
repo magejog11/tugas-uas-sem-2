@@ -580,7 +580,7 @@ $result = $conn->query($query);
                 </a>
                 <div class="header-search">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Cari di DIPSEN..." aria-label="Cari" />
+                    <input type="text" placeholder="Cari di TIPSEN..." aria-label="Cari" />
                 </div>
             </div>
 
