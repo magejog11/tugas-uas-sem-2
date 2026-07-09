@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORKOM UIMY - Pendaftaran Akun Baru</title>
+    <title>TIPSEN - Pendaftaran Akun Baru</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -203,8 +203,8 @@
     <div class="row align-items-center justify-content-center g-4">
         
         <div class="col-lg-6 text-center text-lg-start brand-section">
-            <span class="brand-badge"><i class="fas fa-users me-1"></i> Komunitas UIMY</span>
-            <h1 class="brand-logo-title">FORKOM</h1>
+            <span class="brand-badge"><i class="fas fa-users me-1"></i> Komunitas TIPSEN</span>
+            <h1 class="brand-logo-title">TIPSEN</h1>
             <p class="brand-slogan">
                 Ruang interaktif modern untuk saling terhubung, bertukar pikiran, dan berdiskusi bersama seluruh anggota akademik.
             </p>
@@ -240,12 +240,6 @@
 
                     <button type="submit" class="btn-modern-submit">Daftar Sekarang <i class="fas fa-arrow-right ms-2"></i></button>
 
-                    <div class="divider-container">atau daftar via</div>
-
-                    <a href="#" class="btn-social-oauth">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Google_%22G%22_Logo.svg" alt="Google" style="width: 18px; height: 18px;"> Google Account
-                    </a>
-
                     <div class="footer-redirect">
                         Sudah memiliki akun? <a href="login.php" class="redirect-link">Masuk disini</a>
                     </div>
@@ -254,7 +248,7 @@
             </div>
             
             <div class="copyright-text text-center text-lg-start ps-2">
-                &copy; 2026 FORKOM UIMY. All rights reserved.
+                &copy; 2026 TIPSEN
             </div>
         </div>
 
