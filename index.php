@@ -378,6 +378,7 @@ $result = $conn->query($query);
         .fb-text { font-size: 15px; line-height: 1.5; color: #2d3136; margin-bottom: 14px; word-wrap: break-word; }
         .fb-category { display: inline-block; background: rgba(10, 149, 156, 0.08); color: #0A959C; font-size: 12px; padding: 4px 12px; border-radius: 50px; margin-bottom: 14px; font-weight: 700; }
         .fb-image { width: calc(100% + 36px); margin-left: -18px; margin-right: -18px; max-height: 450px; object-fit: cover; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; margin-bottom: 12px; }
+        .fb-video { width: calc(100% + 36px); margin-left: -18px; margin-right: -18px; max-height: 480px; background: #000; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; margin-bottom: 12px; display: block; }
         
         .fb-actions {
             display: grid;
@@ -579,7 +580,7 @@ $result = $conn->query($query);
 
             <div class="header-center">
                 <a href="index.php" class="header-nav active" title="Beranda"><i class="fas fa-home"></i></a>
-                <a href="index.php" class="header-nav" title="Video"><i class="fas fa-video"></i></a>
+                <a href="videos.php" class="header-nav" title="Video"><i class="fas fa-video"></i></a>
                 <a href="index.php" class="header-nav" title="Grup"><i class="fas fa-users"></i></a>
                 <a href="index.php" class="header-nav" title="Notifikasi"><i class="fas fa-bell"></i></a>
             </div>
@@ -679,6 +680,18 @@ $result = $conn->query($query);
                                 <img src="<?php echo htmlspecialchars($row['image_path']); ?>" alt="Media" class="fb-image">
                             <?php endif; ?>
                         </a>
+
+                        <?php
+                            $video_src = '';
+                            if (!empty($row['video'])) {
+                                $video_src = 'uploads/videos/' . $row['video'];
+                            } elseif (!empty($row['video_path'])) {
+                                $video_src = $row['video_path'];
+                            }
+                        ?>
+                        <?php if ($video_src !== ''): ?>
+                            <video src="<?php echo htmlspecialchars($video_src); ?>" class="fb-video" controls preload="metadata"></video>
+                        <?php endif; ?>
 
                         <div class="fb-actions">
                             <?php $is_liked = (isset($row['user_liked']) && $row['user_liked'] > 0); ?>

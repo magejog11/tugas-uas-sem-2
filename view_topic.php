@@ -384,6 +384,14 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
             object-fit: cover;
             margin-bottom: 20px;
         }
+        .topic-video {
+            width: 100%;
+            border-radius: 18px;
+            max-height: 520px;
+            background: #000;
+            margin-bottom: 20px;
+            display: block;
+        }
         .topic-author {
             display: flex;
             align-items: center;
@@ -737,7 +745,7 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
 
             <div class="header-center">
                 <a href="index.php" class="header-nav active" title="Beranda"><i class="fas fa-home"></i></a>
-                <a href="index.php" class="header-nav" title="Video"><i class="fas fa-video"></i></a>
+                <a href="videos.php" class="header-nav" title="Video"><i class="fas fa-video"></i></a>
                 <a href="index.php" class="header-nav" title="Grup"><i class="fas fa-users"></i></a>
                 <a href="index.php" class="header-nav" title="Notifikasi"><i class="fas fa-bell"></i></a>
             </div>
@@ -776,6 +784,18 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
 
             <?php if (!empty($topic['image_path'])): ?>
                 <img src="<?php echo htmlspecialchars($topic['image_path']); ?>" alt="Topik gambar" class="topic-image">
+            <?php endif; ?>
+
+            <?php
+                $topic_video_src = '';
+                if (!empty($topic['video'])) {
+                    $topic_video_src = 'uploads/videos/' . $topic['video'];
+                } elseif (!empty($topic['video_path'])) {
+                    $topic_video_src = $topic['video_path'];
+                }
+            ?>
+            <?php if ($topic_video_src !== ''): ?>
+                <video src="<?php echo htmlspecialchars($topic_video_src); ?>" class="topic-video" controls preload="metadata"></video>
             <?php endif; ?>
 
             <div class="topic-actions">
