@@ -20,6 +20,46 @@ if (isset($_POST['submit'])) {
         : $conn->real_escape_string($categories[0]);
     $user_id = $_SESSION['user_id'];
     $image_path = '';
+    $video = "";
+
+if (isset($_FILES['video']) && $_FILES['video']['error'] !== UPLOAD_ERR_NO_FILE) {
+    $videoUpload = $_FILES['video'];
+
+    if ($videoUpload['error'] === UPLOAD_ERR_OK) {
+        $allowed_video_mimes = [
+            'video/mp4'  => 'mp4',
+            'video/webm' => 'webm',
+            'video/ogg'  => 'ogv',
+        ];
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $videoMime = finfo_file($finfo, $videoUpload['tmp_name']);
+        finfo_close($finfo);
+
+        if (!isset($allowed_video_mimes[$videoMime])) {
+            $error_message = 'Format video tidak didukung. Gunakan MP4, WebM, atau OGG.';
+        } elseif ($videoUpload['size'] > 50 * 1024 * 1024) {
+            $error_message = 'Ukuran video maksimal 50MB.';
+        } else {
+            $videoDir = 'uploads/videos/';
+            if (!is_dir($videoDir)) {
+                mkdir($videoDir, 0755, true);
+            }
+
+            $videoExt  = $allowed_video_mimes[$videoMime];
+            $videoName = uniqid('vid_', true) . '.' . $videoExt;
+            $targetVideo = $videoDir . $videoName;
+
+            if (move_uploaded_file($videoUpload['tmp_name'], $targetVideo)) {
+                $video = $conn->real_escape_string($videoName);
+            } else {
+                $error_message = 'Gagal mengunggah video. Coba lagi.';
+            }
+        }
+    } else {
+        $error_message = 'Terjadi kesalahan saat mengunggah video.';
+    }
+}
 
     if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
         $upload = $_FILES['image'];
@@ -56,7 +96,19 @@ if (isset($_POST['submit'])) {
     }
 
     if ($error_message === '') {
-        $sql = "INSERT INTO topics (user_id, title, content, category" . ($image_path !== '' ? ', image_path' : '') . ") VALUES ('$user_id', '$title', '$content', '$category'" . ($image_path !== '' ? ", '$image_path'" : '') . ")";
+        $columns = ['user_id', 'title', 'content', 'category'];
+        $values  = ["'$user_id'", "'$title'", "'$content'", "'$category'"];
+
+        if ($image_path !== '') {
+            $columns[] = 'image_path';
+            $values[]  = "'$image_path'";
+        }
+        if ($video !== '') {
+            $columns[] = 'video';
+            $values[]  = "'$video'";
+        }
+
+        $sql = "INSERT INTO topics (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ")";
         if ($conn->query($sql)) {
             header("Location: index.php");
             exit();
@@ -292,16 +344,16 @@ if (isset($_POST['submit'])) {
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="" enctype="multipart/form-data">
-                
+            <form action="" method="POST" enctype="multipart/form-data">
+
                 <div class="fb-group">
-                    <label class="fb-label">Judul Postingan</label>
-                    <input type="text" name="title" class="fb-input" placeholder="Masukkan judul utama Anda..." required autocomplete="off">
+                    <label class="fb-label">Judul</label>
+                    <input type="text" name="title" class="fb-input" placeholder="Judul topik" required>
                 </div>
 
                 <div class="fb-group">
-                    <label class="fb-label">Pilih Kategori</label>
-                    <select name="category" class="fb-select" required>
+                    <label class="fb-label">Kategori</label>
+                    <select name="category" class="fb-select">
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
                         <?php endforeach; ?>
@@ -313,32 +365,31 @@ if (isset($_POST['submit'])) {
                     <textarea name="content" class="fb-textarea" placeholder="Apa yang Anda pikirkan?" required></textarea>
                 </div>
 
-                <!-- Kotak Aksi Penambahan Media Foto ala Facebook Toolbar -->
-                <div class="fb-add-to-post">
-                    <span class="fb-add-text">Tambahkan ke postingan Anda</span>
-                    <div class="file-input-wrapper">
-                        <span class="file-input-placeholder" id="file-label">Foto</span>
-                        <input type="file" name="image" id="image-input" class="file-input-real" accept="image/*" onchange="updateFileName()">
-                    </div>
+                <!-- Kotak Aksi Penambahan Media ala Facebook Toolbar -->
+                <div class="mb-3">
+                    <label class="fb-label">Upload Gambar</label>
+                    <input
+                        type="file"
+                        class="form-control"
+                        name="image"
+                        accept="image/*">
                 </div>
-                
+
+                <div class="mb-3">
+                    <label class="fb-label">Upload Video</label>
+                    <input
+                        type="file"
+                        class="form-control"
+                        name="video"
+                        accept="video/mp4,video/webm,video/ogg">
+                </div>
+
                 <button type="submit" name="submit" class="btn-fb-submit">Kirim</button>
             </form>
         </div>
         
     </div>
 
-    <script>
-        function updateFileName() {
-            const input = document.getElementById('image-input');
-            const label = document.getElementById('file-label');
-            if (input.files && input.files.length > 0) {
-                label.innerText = '✓ Terpilih';
-            } else {
-                label.innerText = ' Foto';
-            }
-        }
-    </script>
     <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
