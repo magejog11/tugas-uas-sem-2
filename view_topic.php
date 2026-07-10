@@ -194,7 +194,7 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($topic['title']); ?> - FORKOM UIMY</title>
+    <title><?php echo htmlspecialchars($topic['title']); ?> - TIPSEN</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -762,12 +762,12 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
             <div class="header-left">
                 <a class="navbar-brand" href="index.php">
                     <span class="logo-mark">F</span>
-                    <span class="brand-text">FORKOM UIMY</span>
+                    <span class="brand-text"></span>
                 </a>
 
                 <div class="header-search">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Cari di FORKOM..." aria-label="Cari" onkeyup="if(this.value.length===0){return;}" disabled />
+                    <input type="text" placeholder="Cari di TIPSEN..." aria-label="Cari" onkeyup="if(this.value.length===0){return;}" disabled />
                 </div>
             </div>
 
