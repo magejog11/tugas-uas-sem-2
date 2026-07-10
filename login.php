@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk - FORKOM UIMY</title>
+    <title>Masuk - TIPSEN</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="row justify-content-center">
         <div class="col-md-5 d-flex justify-content-center">
             <div class="login-card">
-                <div class="brand-logo">FORKOM UIMY</div>
+                <div class="brand-logo">TIPSEN </div>
                 
                 <h5 class="fw-bold text-center mb-1">Selamat Datang Kembali</h5>
                 <p class="text-muted text-center small mb-4">Silakan masuk ke akun Anda</p>
