@@ -1,6 +1,7 @@
 ﻿<?php
 include 'config.php';
 include 'helpers.php';
+include 'notification_helper.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -89,6 +90,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment']) && 
 
         $insert_comment_sql = 'INSERT INTO comments (' . implode(', ', $comment_fields) . ') VALUES (' . implode(', ', $comment_values) . ')';
         if ($conn->query($insert_comment_sql)) {
+            // Buat notifikasi untuk pemilik postingan
+            $topic_owner = "SELECT user_id FROM topics WHERE id = $topic_id";
+            $topic_owner_result = $conn->query($topic_owner);
+            $topic_owner_data = $topic_owner_result->fetch_assoc();
+            $topic_owner_id = $topic_owner_data['user_id'];
+            
+            $commenter_name = '';
+            $commenter_query = "SELECT username FROM users WHERE id = $current_user_id";
+            $commenter_result = $conn->query($commenter_query);
+            if ($commenter_result) {
+                $commenter_data = $commenter_result->fetch_assoc();
+                $commenter_name = $commenter_data['username'];
+            }
+            
+            createNotification($conn, $topic_owner_id, $current_user_id, 'comment', "$commenter_name mengomentari postingan Anda", $topic_id);
+            
             header('Location: view_topic.php?id=' . $topic_id);
             exit();
         }
@@ -125,6 +142,11 @@ if ($comments_table_exists) {
 }
 
 function render_comment_item($comment, $topic_id, $current_user_id) {
+    // Cek apakah user adalah pemilik komentar
+    $is_owner = ($current_user_id === intval($comment['user_id']));
+    $is_admin = intval($comment['is_admin']) == 1;
+    $can_delete = $is_owner || $is_admin;
+    
     ?>
     <article class="comment-card <?php echo !empty($comment['parent_id']) ? 'comment-reply' : ''; ?>">
         <div class="comment-header">
@@ -133,6 +155,9 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
                 <p class="comment-author"><?php echo htmlspecialchars($comment['username']); ?> <?php echo getVerifiedBadgeHTML($comment['is_admin'] == 1 ? 1 : 0); ?></p>
                 <p class="comment-meta"><?php echo getRelativeTime($comment['created_at'] ?? ''); ?></p>
             </div>
+            <?php if ($can_delete): ?>
+                <a href="delete_comment.php?id=<?php echo intval($comment['id']); ?>" onclick="return confirm('Hapus komentar ini?')" class="text-danger" style="position: absolute; right: 16px; top: 16px; text-decoration: none; font-size: 20px; cursor: pointer;">×</a>
+            <?php endif; ?>
         </div>
         <div class="comment-body"><?php echo nl2br(htmlspecialchars($comment['comment'] ?? '')); ?></div>
         <div class="comment-footer">
@@ -169,7 +194,7 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($topic['title']); ?> - FORKOM UIMY</title>
+    <title><?php echo htmlspecialchars($topic['title']); ?> - TIPSEN</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -729,17 +754,20 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
     </style>
 </head>
 <body>
+    <!-- Toast Notification -->
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
     <header class="page-header">
         <div class="container">
             <div class="header-left">
                 <a class="navbar-brand" href="index.php">
                     <span class="logo-mark">F</span>
-                    <span class="brand-text">FORKOM UIMY</span>
+                    <span class="brand-text"></span>
                 </a>
 
                 <div class="header-search">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Cari di FORKOM..." aria-label="Cari" onkeyup="if(this.value.length===0){return;}" disabled />
+                    <input type="text" placeholder="Cari di TIPSEN..." aria-label="Cari" onkeyup="if(this.value.length===0){return;}" disabled />
                 </div>
             </div>
 
@@ -747,7 +775,17 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
                 <a href="index.php" class="header-nav active" title="Beranda"><i class="fas fa-home"></i></a>
                 <a href="videos.php" class="header-nav" title="Video"><i class="fas fa-video"></i></a>
                 <a href="index.php" class="header-nav" title="Grup"><i class="fas fa-users"></i></a>
-                <a href="index.php" class="header-nav" title="Notifikasi"><i class="fas fa-bell"></i></a>
+                <div class="header-nav notification-btn" style="position: relative; cursor: pointer;" title="Notifikasi" onclick="toggleNotifications(event)">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="position: absolute; top: 8px; right: 8px; background: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; display: none;">0</span>
+                </div>
+                <div id="notificationPanel" class="notification-panel" style="display: none; position: absolute; top: 60px; right: 20px; width: 360px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); z-index: 1000; max-height: 400px; overflow-y: auto;">
+                    <div class="notification-header" style="padding: 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; font-size: 16px; font-weight: bold;">Notifikasi</h3>
+                        <button onclick="markAllNotificationsRead()" style="background: none; border: none; color: #0a959c; cursor: pointer; font-size: 12px; font-weight: bold;">Tandai Semua</button>
+                    </div>
+                    <div id="notificationList" style="max-height: 350px; overflow-y: auto;"></div>
+                </div>
             </div>
 
             <div class="header-actions">
@@ -920,6 +958,178 @@ function render_comment_item($comment, $topic_id, $current_user_id) {
                 }
             });
         });
+
+        // Notification System
+        function loadNotifications() {
+            <?php if ($current_user_id > 0): ?>
+            fetch('notification_handler.php?action=get_unread')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.count > 0) {
+                        document.getElementById('notificationBadge').textContent = data.count;
+                        document.getElementById('notificationBadge').style.display = 'flex';
+                    } else {
+                        document.getElementById('notificationBadge').style.display = 'none';
+                    }
+                });
+            <?php endif; ?>
+        }
+
+        function toggleNotifications(event) {
+            event.stopPropagation();
+            const panel = document.getElementById('notificationPanel');
+            const isHidden = panel.style.display === 'none';
+            
+            if (isHidden) {
+                loadNotificationList();
+            }
+            
+            panel.style.display = isHidden ? 'block' : 'none';
+        }
+
+        function loadNotificationList() {
+            <?php if ($current_user_id > 0): ?>
+            fetch('notification_handler.php?action=get_notifications&limit=15')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('notificationList');
+                    if (data.success && data.notifications.length > 0) {
+                        let html = '';
+                        data.notifications.forEach(notif => {
+                            const icon = notif.type === 'like' ? '👍' : notif.type === 'comment' ? '💬' : '⭐';
+                            const link = notif.topic_id ? `view_topic.php?id=${notif.topic_id}` : '#';
+                            const readClass = notif.is_read ? '' : 'style="background-color: #f0f8ff;"';
+                            
+                            html += `<a href="${link}" onclick="markNotificationRead(${notif.id})" style="display: block; padding: 12px 16px; border-bottom: 1px solid #eee; text-decoration: none; color: #333; ${notif.is_read ? '' : 'background-color: #f0f8ff;'} transition: background-color 0.2s;">
+                                <div style="display: flex; gap: 8px;">
+                                    <span style="font-size: 18px;">${icon}</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 14px; font-weight: 500;">${notif.message}</div>
+                                        <div style="font-size: 12px; color: #999; margin-top: 4px;">${getTimeAgo(notif.created_at)}</div>
+                                    </div>
+                                </div>
+                            </a>`;
+                        });
+                        list.innerHTML = html;
+                    } else {
+                        list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Tidak ada notifikasi</div>';
+                    }
+                });
+            <?php endif; ?>
+        }
+
+        function markNotificationRead(notifId) {
+            fetch(`notification_handler.php?action=mark_read&id=${notifId}`)
+                .then(response => response.json())
+                .catch(() => {});
+        }
+
+        function markAllNotificationsRead() {
+            fetch('notification_handler.php?action=mark_all_read')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('notificationBadge').style.display = 'none';
+                        loadNotificationList();
+                    }
+                });
+        }
+
+        function getTimeAgo(dateString) {
+            const time = new Date(dateString).getTime();
+            const now = new Date().getTime();
+            const diff = now - time;
+            
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (seconds < 60) return 'baru saja';
+            if (minutes < 60) return minutes + ' menit lalu';
+            if (hours < 24) return hours + ' jam lalu';
+            if (days < 7) return days + ' hari lalu';
+            
+            return new Date(dateString).toLocaleDateString('id-ID');
+        }
+
+        // Load notifications on page load
+        loadNotifications();
+        setInterval(loadNotifications, 30000); // Refresh setiap 30 detik
+
+        // Close notification panel when clicking outside
+        document.addEventListener('click', function(event) {
+            const panel = document.getElementById('notificationPanel');
+            const btn = document.querySelector('.notification-btn');
+            if (panel && btn && !panel.contains(event.target) && !btn.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        });
+
+        // Toast Notification System
+        function showToast(message, type = 'success', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3';
+            
+            toast.style.cssText = `
+                background-color: ${bgColor};
+                color: white;
+                padding: 16px 20px;
+                margin-bottom: 10px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                font-size: 14px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+            `;
+            
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Check for session messages
+        <?php if (isset($_SESSION['success_message'])): ?>
+            showToast('<?= addslashes($_SESSION['success_message']) ?>', 'success');
+            <?php unset($_SESSION['success_message']); ?>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['error_message'])): ?>
+            showToast('<?= addslashes($_SESSION['error_message']) ?>', 'error');
+            <?php unset($_SESSION['error_message']); ?>
+        <?php endif; ?>
     </script>
 </body>
 </html>

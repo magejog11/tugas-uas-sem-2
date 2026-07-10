@@ -1,6 +1,7 @@
 <?php
 include 'config.php';
 include 'helpers.php';
+include 'notification_helper.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -166,6 +167,12 @@ $result = $conn->query($query);
             align-items: center;
             justify-content: center;
             overflow: hidden;
+        }
+        .logo-image {
+            width: auto;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .logo-image {
@@ -961,6 +968,8 @@ $result = $conn->query($query);
 </head>
 
 <body>
+    <!-- Toast Notification -->
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
     <header class="page-header">
         <div class="container">
