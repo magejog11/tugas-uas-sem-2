@@ -110,6 +110,7 @@ if (isset($_FILES['video']) && $_FILES['video']['error'] !== UPLOAD_ERR_NO_FILE)
 
         $sql = "INSERT INTO topics (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ")";
         if ($conn->query($sql)) {
+            $_SESSION['success_message'] = 'Postingan berhasil dibuat!';
             header("Location: index.php");
             exit();
         } else {
